@@ -7,7 +7,15 @@ from pyspark.sql.functions import *
 
 # dbutils.widgets.text("volume_path", "", "Volume Path")
 # VOLUME_PATH = dbutils.widgets.get("volume_path")
+dbutils.widgets.text("job_id", "", "Job Id")
+JOB_ID = dbutils.widgets.get("job_id")
 # print(VOLUME_PATH)
+print(JOB_ID)
+
+# COMMAND ----------
+
+input_job_list = JOB_ID.split(",")
+input_job_list
 
 # COMMAND ----------
 
@@ -30,7 +38,7 @@ print(DEST_HEADERS)
 
 # COMMAND ----------
 
-input_job_list = ["830024732965608"]
+# input_job_list = ["451643523721466"]
 
 # COMMAND ----------
 
@@ -98,7 +106,7 @@ for job_details_dict in job_details_list:
     #     print(job_key, job_val)
     #     print(type(job_key), type(job_val))
     #     print("="*100)
-    job_details_dict["name"] = f'{job_details_dict["name"].rstrip("-UC")}-UC'
+    job_details_dict["name"] = f'{job_details_dict["name"]}-UC'
 
     if "schedule" in job_details_dict:
         if "pause_status" in job_details_dict["schedule"]:
@@ -108,7 +116,20 @@ for job_details_dict in job_details_list:
     for ind, job_cluster in enumerate(job_cluster_list):
         if "new_cluster" in job_cluster:
             if "spark_version" in job_cluster["new_cluster"]:
-                job_cluster["new_cluster"]["spark_version"] = "13.3.x-scala2.12"
+                # job_cluster["new_cluster"]["spark_version"] = "13.3.x-scala2.12"
+
+                if "custom" not in job_cluster["new_cluster"]["spark_version"]:
+                    spark_version_nbr = job_cluster["new_cluster"]["spark_version"].split(".x")[0]
+                    if float(spark_version_nbr) >= 13.3:
+                        job_cluster["new_cluster"]["spark_version"] = f"{spark_version_nbr}.x{job_cluster['new_cluster']['spark_version'].split('.x')[-1]}"
+                    else:
+                        job_cluster["new_cluster"]["spark_version"] = f"13.3.x{job_cluster['new_cluster']['spark_version'].split('.x')[-1]}"
+                else:
+                    if "ml" in cluster_details_dict["spark_version"]:
+                        job_cluster["new_cluster"]["spark_version"] = "13.3.x-cpu-ml-scala2.12"
+                    else:
+                        job_cluster["new_cluster"]["spark_version"] = "13.3.x-scala2.12"
+
             # if "data_security_mode" in job_cluster["new_cluster"]:
             #     if "SINGLE_USER" in job_cluster["new_cluster"]["data_security_mode"]:
             #         job_cluster["new_cluster"]["data_security_mode"] = "SINGLE_USER"
@@ -213,5 +234,4 @@ display(create_job_resp_df)
 
 
 # COMMAND ----------
-
 
