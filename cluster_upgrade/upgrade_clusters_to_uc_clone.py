@@ -131,9 +131,9 @@ for cluster_details_dict in cluster_details_list:
     cluster_details_dict["cluster_name"] = f'{cluster_details_dict["cluster_name"]}-UC'
 
     # cluster_details_dict["spark_version"] = "13.3.x-scala2.12"
-    spark_version_nbr = cluster_details_dict["spark_version"].split(".x")[0]
-    # print(spark_version_nbr)
     if "custom" not in cluster_details_dict["spark_version"]:
+        spark_version_nbr = cluster_details_dict["spark_version"].split(".x")[0]
+        # print(spark_version_nbr)
         if float(spark_version_nbr) >= 13.3:
             cluster_details_dict["spark_version"] = f"{spark_version_nbr}.x{cluster_details_dict['spark_version'].split('.x')[-1]}"
         else:
@@ -503,5 +503,4 @@ if len(permission_sync_resp_list) > 0:
     display(permission_sync_resp_df)
 
 # COMMAND ----------
-
 
