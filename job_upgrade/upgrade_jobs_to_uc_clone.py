@@ -9,8 +9,17 @@ from pyspark.sql.functions import *
 # VOLUME_PATH = dbutils.widgets.get("volume_path")
 dbutils.widgets.text("job_id", "", "Job Id")
 JOB_ID = dbutils.widgets.get("job_id")
+dbutils.widgets.text("catalog_name", "", "Catalog Name")
+CATALOG_NAME = dbutils.widgets.get("catalog_name")
+dbutils.widgets.dropdown("pause_status", "PAUSED", ["PAUSED", "UNPAUSED"], "Pause Status")
+PAUSE_STATUS = dbutils.widgets.get("pause_status")
+dbutils.widgets.text("run_as_username", "", "Run As User Name")
+RUN_AS_USERNAME = dbutils.widgets.get("run_as_username")
 # print(VOLUME_PATH)
 print(JOB_ID)
+print(CATALOG_NAME)
+print(PAUSE_STATUS)
+print(RUN_AS_USERNAME)
 
 # COMMAND ----------
 
@@ -108,9 +117,34 @@ for job_details_dict in job_details_list:
     #     print("="*100)
     job_details_dict["name"] = f'{job_details_dict["name"]}-UC'
 
-    if "schedule" in job_details_dict:
-        if "pause_status" in job_details_dict["schedule"]:
-            job_details_dict["schedule"]["pause_status"] = "PAUSED"
+    if PAUSE_STATUS == "PAUSED":
+        if "schedule" in job_details_dict:
+            if "pause_status" in job_details_dict["schedule"]:
+                job_details_dict["schedule"]["pause_status"] = "PAUSED"
+
+        if "continuous" in job_details_dict:
+            if "pause_status" in job_details_dict["continuous"]:
+                job_details_dict["continuous"]["pause_status"] = "PAUSED"
+    else:
+        if "schedule" in job_details_dict:
+            if "pause_status" in job_details_dict["schedule"]:
+                job_details_dict["schedule"]["pause_status"] = "UNPAUSED"
+
+        if "continuous" in job_details_dict:
+            if "pause_status" in job_details_dict["continuous"]:
+                job_details_dict["continuous"]["pause_status"] = "UNPAUSED"
+
+    if "run_as_user_name" in job_details_dict:
+        if RUN_AS_USERNAME.strip() == "":
+            if "@" in job_details_dict["run_as_user_name"]:
+                job_details_dict["run_as"] = {"user_name": job_details_dict["run_as_user_name"]}
+            else:
+                job_details_dict["run_as"] = {"service_principal_name": job_details_dict["run_as_user_name"]}
+        else:
+            if "@" in RUN_AS_USERNAME:
+                job_details_dict["run_as"] = {"user_name": RUN_AS_USERNAME}
+            else:
+                job_details_dict["run_as"] = {"service_principal_name": RUN_AS_USERNAME}
 
     job_cluster_list = job_details_dict.get("job_clusters", [])
     for ind, job_cluster in enumerate(job_cluster_list):
@@ -144,6 +178,16 @@ for job_details_dict in job_details_list:
                 if "spark.databricks.acl.dfAclsEnabled" in job_cluster["new_cluster"]["spark_conf"]:
                     job_cluster["new_cluster"]["spark_conf"].pop("spark.databricks.acl.dfAclsEnabled")
 
+                if "spark.databricks.pyspark.enablePy4JSecurity" in job_cluster["new_cluster"]["spark_conf"]:
+                    job_cluster["new_cluster"]["spark_conf"].pop("spark.databricks.pyspark.enablePy4JSecurity")
+
+                if CATALOG_NAME.strip() != "":
+                    job_cluster["new_cluster"]["spark_conf"]["spark.databricks.sql.initial.catalog.name"] = CATALOG_NAME
+
+            else:
+                if CATALOG_NAME.strip() != "":
+                    job_cluster["spark_conf"] = {"spark.databricks.sql.initial.catalog.name" : CATALOG_NAME}
+            
             if "aws_attributes" in job_cluster["new_cluster"] and ("ebs_volume_count" in job_cluster["new_cluster"]["aws_attributes"] or "ebs_volume_type" in job_cluster["new_cluster"]["aws_attributes"] or "ebs_volume_size" in job_cluster["new_cluster"]["aws_attributes"]):
                 if "disk_spec" in job_cluster["new_cluster"]:
                     job_cluster["new_cluster"].pop("disk_spec")
@@ -177,6 +221,16 @@ for job_details_dict in job_details_list:
         
                 if "spark.databricks.acl.dfAclsEnabled" in task["new_cluster"]["spark_conf"]:
                     task["new_cluster"]["spark_conf"].pop("spark.databricks.acl.dfAclsEnabled")
+
+                if "spark.databricks.pyspark.enablePy4JSecurity" in task["new_cluster"]["spark_conf"]:
+                    task["new_cluster"]["spark_conf"].pop("spark.databricks.pyspark.enablePy4JSecurity")
+
+                if CATALOG_NAME.strip() != "":
+                    task["new_cluster"]["spark_conf"]["spark.databricks.sql.initial.catalog.name"] = CATALOG_NAME
+
+            else:
+                if CATALOG_NAME.strip() != "":
+                    task["new_cluster"]["spark_conf"] = {"spark.databricks.sql.initial.catalog.name" : CATALOG_NAME}
 
             if "aws_attributes" in task["new_cluster"] and ("ebs_volume_count" in task["new_cluster"]["aws_attributes"] or "ebs_volume_type" in task["new_cluster"]["aws_attributes"] or "ebs_volume_size" in task["new_cluster"]["aws_attributes"]):
                 if "disk_spec" in task["new_cluster"]:
@@ -220,7 +274,9 @@ for job_dict in job_details_list:
     create_job_resp = create_job(create_job_url, DEST_HEADERS, job_dict, job_name)
     if "job_id" in create_job_resp:
         job_mapping[job_name] = {"old_job_id": old_job_id, "new_job_id": create_job_resp["job_id"]}
-    create_job_resp_list.append({"job_name": job_name, "old_job_id": old_job_id, "new_job_id": create_job_resp["job_id"], "response": str(create_job_resp)})
+        create_job_resp_list.append({"job_name": job_name, "old_job_id": old_job_id, "new_job_id": create_job_resp["job_id"], "response": str(create_job_resp)})
+    else:
+        create_job_resp_list.append({"job_name": job_name, "old_job_id": old_job_id, "response": str(create_job_resp)})
 
 print("Create Job Response:")
 try:
@@ -231,7 +287,97 @@ display(create_job_resp_df)
 
 # COMMAND ----------
 
+def get_job_permissions(api_url, api_headers, job_id):
+    # api_data = {"job_id": str(job_id)}
+    response = requests.get(url=api_url, headers=api_headers)
+    json_response = {}
+    if response.status_code == 200:
+        json_response = response.json()
+    else:
+        try:
+            json_response = response.json()
+        except Exception as e:
+            json_response = {"message": f"an error ocurred while getting job permissions: {job_id}"}
+    return json_response
 
+# COMMAND ----------
+
+permission_mapping_list = []
+new_job_id = None
+if len(create_job_resp_list) > 0:
+    for job_resp in create_job_resp_list:
+        if "old_job_id" in job_resp:
+            old_job_id = job_resp["old_job_id"]
+        if "new_job_id" in job_resp:
+            new_job_id = job_resp["new_job_id"]
+        if "job_name" in job_resp:
+            job_name = job_resp["job_name"]
+        job_permission_url = f"{SRC_DATABRICKS_HOST}/api/2.0/permissions/jobs/{old_job_id}"    
+        job_permission_resp = get_job_permissions(job_permission_url, SRC_HEADERS, old_job_id)
+        # print(job_permission_resp)
+        if "object_id" in job_permission_resp:
+            if "access_control_list" in job_permission_resp:
+                permissions_list = []
+                for permission in job_permission_resp["access_control_list"]:
+                    if "all_permissions" in permission:
+                        all_permission_list = permission["all_permissions"]
+                        for all_permission in all_permission_list:
+                            if "permission_level" in all_permission:
+                                if "inherited" in all_permission:
+                                    if all_permission["inherited"] != True:
+                                        if "group_name" in permission:
+                                            permissions_list.append({"group_name": permission["group_name"], "permission_level": all_permission["permission_level"]})
+                                        if "user_name" in permission:
+                                            permissions_list.append({"user_name": permission["user_name"], "permission_level": all_permission["permission_level"]})
+                                        if "service_principal_name" in permission:
+                                            permissions_list.append({"service_principal_name": permission["service_principal_name"], "permission_level": all_permission["permission_level"]})
+                        
+                permission_mapping_list.append({"old_job_id": old_job_id, "new_job_id": new_job_id, "job_name": job_name, "access_control_list": permissions_list})
+        
+    print("Cluster Permission:")
+    if len(permission_mapping_list) > 0:
+        try:
+            permission_mapping_df = spark.createDataFrame(permission_mapping_list)
+        except Exception as e:
+            permission_mapping_df = spark.createDataFrame(schema_check(permission_mapping_list))
+        display(permission_mapping_df)
+# permission_mapping_list[:1]
+
+# COMMAND ----------
+
+def sync_permissions(api_url, api_headers, job_id, access_control_list):
+    api_data = {"access_control_list": access_control_list}
+    # print(api_data)
+    response = requests.put(url=api_url, headers=api_headers, json=api_data)
+    json_response = {}
+    if response.status_code == 200:
+        json_response = response.json()
+    else:
+        try:
+            json_response = response.json()
+        except Exception as e:
+            json_response = {"message": f"an error ocurred while syncing permissions: {job_id}"}
+    return json_response
+
+# COMMAND ----------
+
+permission_sync_resp_list = []
+for permission_details in permission_mapping_list:
+    new_job_id = permission_details["new_job_id"]
+    old_job_id = permission_details["old_job_id"]
+    job_name = permission_details["job_name"]
+    access_control_list = permission_details["access_control_list"]
+    permission_sync_url = f"{DEST_DATABRICKS_HOST}/api/2.0/permissions/jobs/{new_job_id}"
+    permission_sync_resp = sync_permissions(permission_sync_url, DEST_HEADERS, new_job_id, access_control_list)
+    permission_sync_resp_list.append({"new_job_id": new_job_id, "job_name": job_name, "old_job_id": old_job_id, "access_control_list": access_control_list, "permission_sync_resp": str(permission_sync_resp)})
+
+print("Permission Sync Responses:")
+if len(permission_sync_resp_list) > 0:
+    try:
+        permission_sync_resp_df = spark.createDataFrame(permission_sync_resp_list)
+    except Exception as e:
+        permission_sync_resp_df = spark.createDataFrame(schema_check(permission_sync_resp_list))
+    display(permission_sync_resp_df)
 
 # COMMAND ----------
 
