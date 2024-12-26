@@ -141,7 +141,10 @@ for cluster_details_dict in cluster_details_list:
             cluster_details_dict["spark_version"] = f"13.3.x{cluster_details_dict['spark_version'].split('.x')[-1]}"
     else:
         if "ml" in cluster_details_dict["spark_version"]:
-            cluster_details_dict["spark_version"] = "13.3.x-cpu-ml-scala2.12"
+            if "gpu" in cluster_details_dict["spark_version"]:
+                cluster_details_dict["spark_version"] = "13.3.x-gpu-ml-scala2.12"
+            else:
+                cluster_details_dict["spark_version"] = "13.3.x-cpu-ml-scala2.12"
         else:
             cluster_details_dict["spark_version"] = "13.3.x-scala2.12"
 
