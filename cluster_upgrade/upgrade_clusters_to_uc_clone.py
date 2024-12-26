@@ -1,6 +1,7 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC - Download the init_script from workspace files and upload it to the volume 
+# MAGIC ##### For Shared Mode -
+# MAGIC - Download the init_script from workspace files and upload it to the volume
 # MAGIC - Note : create a volume as utility_scripts under default schema of respective BU catalog , if not already exists
 # MAGIC - Add the init script path to the metastore allowed list
 
@@ -196,8 +197,8 @@ for cluster_details_dict in cluster_details_list:
     if "policy_id" in cluster_details_dict:
         if POLICY_ID.strip() != "":
             cluster_details_dict["policy_id"] = POLICY_ID
-        else:
-            cluster_details_dict.pop("policy_id")
+        # else:
+        #     cluster_details_dict.pop("policy_id")
 
 print("Updated Clusters:")
 try:
