@@ -15,11 +15,14 @@ dbutils.widgets.dropdown("pause_status", "PAUSED", ["PAUSED", "UNPAUSED"], "Paus
 PAUSE_STATUS = dbutils.widgets.get("pause_status")
 dbutils.widgets.text("run_as_username", "", "Run As User Name")
 RUN_AS_USERNAME = dbutils.widgets.get("run_as_username")
+dbutils.widgets.text("existing_cluster_id", "", "Existing Cluster Id")
+EXISTING_CLUSTER_ID = dbutils.widgets.get("existing_cluster_id")
 # print(VOLUME_PATH)
 print(JOB_ID)
 print(CATALOG_NAME)
 print(PAUSE_STATUS)
 print(RUN_AS_USERNAME)
+print(EXISTING_CLUSTER_ID)
 
 # COMMAND ----------
 
@@ -206,8 +209,10 @@ for job_details_dict in job_details_list:
     for ind, task in enumerate(task_list):
         # print(type(task))
 
-        # if "existing_cluster_id" in task:
-        #     task["existing_cluster_id"] = "1218-114900-siyk4lmw"
+        if "existing_cluster_id" in task:
+            if EXISTING_CLUSTER_ID.strip() != "":
+                task["existing_cluster_id"] = EXISTING_CLUSTER_ID
+
         if "new_cluster" in task:
             if "spark_version" in task["new_cluster"]:
                 task["new_cluster"]["spark_version"] = "13.3.x-scala2.12"
