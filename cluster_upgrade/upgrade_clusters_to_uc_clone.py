@@ -22,7 +22,7 @@ from pyspark.sql.functions import *
 # DEFAULT_CATALOG = dbutils.widgets.get("default_catalog")
 # dbutils.widgets.text("schema_name", "", "Schema Name")
 # SCHEMA_NAME = dbutils.widgets.get("schema_name")
-dbutils.widgets.text("volume_path", "", "Volume Path")
+dbutils.widgets.text("volume_path", "", "Base Volume Path")
 VOLUME_PATH = dbutils.widgets.get("volume_path")
 dbutils.widgets.text("single_user", "", "Single User")
 SINGLE_USER = dbutils.widgets.get("single_user")
@@ -329,7 +329,7 @@ if len(libraries_mapping_list) > 0:
     except Exception as e:
         cluster_library_resp_df = spark.createDataFrame(schema_check(libraries_mapping_list))
     display(cluster_library_resp_df)
-libraries_mapping_list[:1]
+# libraries_mapping_list[:1]
 
 # COMMAND ----------
 
