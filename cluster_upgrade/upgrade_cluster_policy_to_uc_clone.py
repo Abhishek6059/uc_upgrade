@@ -16,7 +16,10 @@ from pyspark.sql.functions import *
 # SCHEMA_NAME = dbutils.widgets.get("schema_name")
 # dbutils.widgets.text("volume_path", "", "Volume Path")
 # VOLUME_PATH = dbutils.widgets.get("volume_path")
+dbutils.widgets.text("policy_id", "", "Policy ID")
+POLICY_ID = dbutils.widgets.get("policy_id")
 # print(VOLUME_PATH)
+print(POLICY_ID)
 
 # COMMAND ----------
 
@@ -44,7 +47,8 @@ print(DEST_HEADERS)
 
 # COMMAND ----------
 
-input_policy_list = ["0F61EF4EEC0005E0"]
+input_policy_list = POLICY_ID.split(",")
+input_policy_list
 
 # COMMAND ----------
 
@@ -108,7 +112,7 @@ for policy_details_dict in policy_details_list:
     #     print(policy_key, policy_val)
     #     print(type(policy_key), type(policy_val))
     #     print("="*100)
-    policy_details_dict["name"] = f'{policy_details_dict["name"].rstrip("-uc")}-uc'
+    policy_details_dict["name"] = f'{policy_details_dict["name"]}-uc'
 
     if "definition" in policy_details_dict:
         policy_definition = policy_details_dict["definition"]
@@ -181,5 +185,4 @@ create_policy_resp_list
 policy_mapping
 
 # COMMAND ----------
-
 
