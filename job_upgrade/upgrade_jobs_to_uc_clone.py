@@ -159,8 +159,11 @@ for job_details_dict in job_details_list:
                     else:
                         job_cluster["new_cluster"]["spark_version"] = f"13.3.x{job_cluster['new_cluster']['spark_version'].split('.x')[-1]}"
                 else:
-                    if "ml" in cluster_details_dict["spark_version"]:
-                        job_cluster["new_cluster"]["spark_version"] = "13.3.x-cpu-ml-scala2.12"
+                    if "ml" in job_cluster["new_cluster"]["spark_version"]:
+                        if "gpu" in job_cluster["new_cluster"]["spark_version"]:
+                            job_cluster["new_cluster"]["spark_version"] = "13.3.x-gpu-ml-scala2.12"
+                        else:
+                            job_cluster["new_cluster"]["spark_version"] = "13.3.x-cpu-ml-scala2.12"
                     else:
                         job_cluster["new_cluster"]["spark_version"] = "13.3.x-scala2.12"
 
@@ -208,6 +211,22 @@ for job_details_dict in job_details_list:
         if "new_cluster" in task:
             if "spark_version" in task["new_cluster"]:
                 task["new_cluster"]["spark_version"] = "13.3.x-scala2.12"
+
+                if "custom" not in task["new_cluster"]["spark_version"]:
+                    spark_version_nbr = task["new_cluster"]["spark_version"].split(".x")[0]
+                    if float(spark_version_nbr) >= 13.3:
+                        task["new_cluster"]["spark_version"] = f"{spark_version_nbr}.x{task['new_cluster']['spark_version'].split('.x')[-1]}"
+                    else:
+                        task["new_cluster"]["spark_version"] = f"13.3.x{task['new_cluster']['spark_version'].split('.x')[-1]}"
+                else:
+                    if "ml" in task["new_cluster"]["spark_version"]:
+                        if "gpu" in task["new_cluster"]["spark_version"]:
+                            task["new_cluster"]["spark_version"] = "13.3.x-gpu-ml-scala2.12"
+                        else:
+                            task["new_cluster"]["spark_version"] = "13.3.x-cpu-ml-scala2.12"
+                    else:
+                        task["new_cluster"]["spark_version"] = "13.3.x-scala2.12"
+
             # if "data_security_mode" in task["new_cluster"]:
             #     if "SINGLE_USER" in task["new_cluster"]["data_security_mode"]:
             #         task["new_cluster"]["data_security_mode"] = "SINGLE_USER"
