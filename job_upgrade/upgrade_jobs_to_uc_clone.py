@@ -11,7 +11,7 @@ dbutils.widgets.text("job_id", "", "Job Id")
 JOB_ID = dbutils.widgets.get("job_id")
 dbutils.widgets.text("catalog_name", "", "Catalog Name")
 CATALOG_NAME = dbutils.widgets.get("catalog_name")
-dbutils.widgets.dropdown("pause_status", "PAUSED", ["PAUSED", "UNPAUSED"], "Pause Status")
+dbutils.widgets.dropdown("pause_status", "PAUSED", ["NONE", "PAUSED", "UNPAUSED"], "Pause Status")
 PAUSE_STATUS = dbutils.widgets.get("pause_status")
 dbutils.widgets.text("run_as_username", "", "Run As User Name")
 RUN_AS_USERNAME = dbutils.widgets.get("run_as_username")
@@ -128,7 +128,8 @@ for job_details_dict in job_details_list:
         if "continuous" in job_details_dict:
             if "pause_status" in job_details_dict["continuous"]:
                 job_details_dict["continuous"]["pause_status"] = "PAUSED"
-    else:
+                
+    elif PAUSE_STATUS == "UNPAUSED":
         if "schedule" in job_details_dict:
             if "pause_status" in job_details_dict["schedule"]:
                 job_details_dict["schedule"]["pause_status"] = "UNPAUSED"
