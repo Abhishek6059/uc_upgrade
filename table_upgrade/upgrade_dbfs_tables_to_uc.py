@@ -291,7 +291,7 @@ alter_table_owner_list = []
 for copy_table_data in tqdm(copy_table_data_list, desc="Progress"):
     database = copy_table_data['database']
     table = copy_table_data['table']
-    alter_stmt = f"ALTER TABLE {CATALOG_NAME}.{database}.{table} SET OWNER TO {OWNER_NAME}"
+    alter_stmt = f"ALTER TABLE {CATALOG_NAME}.{database}.{table} SET OWNER TO `{OWNER_NAME}`"
     alter_table_owner_list.append(alter_stmt)
 alter_table_owner_list[:1]
 
