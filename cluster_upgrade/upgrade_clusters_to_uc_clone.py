@@ -319,6 +319,9 @@ for cluster_name, cluster_info in cluster_mapping.items():
             library_statuses = libraries_resp["library_statuses"]
             for library_status in library_statuses:
                 if "library" in library_status:
+                    if "jar" in library_status["library"]:
+                        jar_file_name = library_status["library"]["jar"].split("/")[-1]
+                        library_status["library"]["jar"] = f'{VOLUME_PATH.rstrip("/")}/{jar_file_name}'
                     libraries_list.append(library_status["library"])
             libraries_mapping_list.append({"old_cluster_id": old_cluster_id, "new_cluster_id": new_cluster_id, "cluster_name": cluster_name, "libraries_list": libraries_list})
     
