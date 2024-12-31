@@ -1,10 +1,4 @@
 # Databricks notebook source
-# MAGIC %sql
-# MAGIC -- DROP SCHEMA dbx_uc_jpdev.com_jp_mart_ddt_rwd_uc_cd CASCADE;
-# MAGIC -- SELECT * FROM jpdev_jpbu_catalog.com_jp_alyt_ddt_rwd.lgs_jmdc_treatmentsankey_addon
-
-# COMMAND ----------
-
 pip install tqdm
 
 # COMMAND ----------
@@ -137,6 +131,10 @@ if len(view_df.collect()) > 0:
             pattern = re.compile(rf"\b{re.escape(catalog_database)}.\b", flags=re.IGNORECASE)
             view_create_statement = pattern.sub(f"{catalog_name}.{catalog_database}.", view_create_statement)
 
+            pattern = re.compile(rf"\b`{re.escape(catalog_database)}`.\b", flags=re.IGNORECASE)
+            view_create_statement = pattern.sub(f"{catalog_name}.{catalog_database}.", view_create_statement)
+
+
             pattern = re.compile(rf"\b{re.escape(catalog_database)} .\b", flags=re.IGNORECASE)
             view_create_statement = pattern.sub(f"{catalog_name}.{catalog_database}.", view_create_statement)
 
@@ -164,9 +162,9 @@ views_create_res_list = []
 for view_create_stmt in tqdm(view_create_statement_list, desc="Progress"):
     try:
         spark.sql(view_create_stmt["view_stmt"])
-        views_create_res_list.append({"schema_name": view_create_stmt["schema_name"] ,"view_name": view_create_stmt["view_name"], "view_stmt": view_create_stmt["view_stmt"], "status": "success"})
+        views_create_res_list.append({"schema_name": view_create_stmt["schema_name"] ,"view_name": view_create_stmt["view_name"], "view_stmt": view_create_stmt["view_stmt"], "status": "success", "error": ""})
     except Exception as e:
-        views_create_res_list.append({"schema_name": view_create_stmt["schema_name"] ,"view_name": view_create_stmt["view_name"], "view_stmt": view_create_stmt["view_stmt"], "status": "failed"})
+        views_create_res_list.append({"schema_name": view_create_stmt["schema_name"] ,"view_name": view_create_stmt["view_name"], "view_stmt": view_create_stmt["view_stmt"], "status": "failed", "error": str(e)[:32000]})
 views_create_res_list[:1]
 
 # COMMAND ----------
@@ -247,5 +245,4 @@ success_alter_views_res_df = (
 display(success_alter_views_res_df)
 
 # COMMAND ----------
-
 
