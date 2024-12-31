@@ -121,14 +121,14 @@ display(detailed_tbl_df)
 # COMMAND ----------
 
 detailed_tbl_df = (
-  detailed_tbl_df.filter(~col("Location").startswith("s3"))
+  detailed_tbl_df.filter((~col("Location").startswith("s3")) | (col("Provider")=="hive"))
 )
 display(detailed_tbl_df)
 
 # COMMAND ----------
 
 schema_table_list_final = []
-for table_row in detailed_tbl_df.collect():
+for table_row in tqdm(detailed_tbl_df.collect(), desc="Progress"):
     schema_name = table_row["Database"]
     table_name = table_row["Table"]
     curr_loc = table_row["Location"]
@@ -318,5 +318,4 @@ if len(failed_alter_table_list) > 0:
     display(failed_alter_table_df)
 
 # COMMAND ----------
-
 
